@@ -13,7 +13,7 @@ var sqlConnectionString = builder.Configuration.GetValue<string>("SqlConnectionS
 var sqlConnectionStringFound = !string.IsNullOrWhiteSpace(sqlConnectionString);
 
 // Toggle between In-memory and SQL repositories
-bool useInMemory = true; // change to false to use SQL
+bool useInMemory = true;
 
 if (useInMemory)
 {
