@@ -16,7 +16,7 @@ var sqlConnectionString = builder.Configuration.GetValue<string>("SqlConnectionS
 var sqlConnectionStringFound = !string.IsNullOrWhiteSpace(sqlConnectionString);
 
 // Register OpenAPI/Swagger for API documentation and testing.
-//builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
@@ -53,7 +53,7 @@ builder.Services.AddTransient<IAuthenticationService, AspNetIdentityAuthenticati
 builder.Services.AddTransient<IExampleObjectRepository, MemoryExampleObjectRepository>();
 
 // To use a SQL-backed repository instead, uncomment the following line:
-//builder.Services.AddTransient<IExampleObjectRepository, SqlExampleObjectRepository>(o => new SqlExampleObjectRepository(sqlConnectionString!));
+builder.Services.AddTransient<IExampleObjectRepository, SqlExampleObjectRepository>(o => new SqlExampleObjectRepository(sqlConnectionString!));
 
 var app = builder.Build();
 
@@ -89,7 +89,7 @@ app.UseAuthorization();
 
 // Register Identity endpoints for account management (register, login, etc.) under /account.
 // 👇 uncomment the following line to enable Identity API endpoints to use authentication/authorization
-//app.MapGroup("/account").MapIdentityApi<IdentityUser>().WithTags("Account");
+app.MapGroup("/account").MapIdentityApi<IdentityUser>().WithTags("Account");
 
 // Register all controller endpoints for the application.
 app.MapControllers();
