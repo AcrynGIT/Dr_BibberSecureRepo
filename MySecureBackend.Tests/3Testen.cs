@@ -44,7 +44,7 @@ namespace MySecureBackend.Tests
         }
 
         [TestMethod]
-        //
+        // Controleert of dat de API een 404 Not Found terugstuurt als een user avatar niet bestaat.
         public async Task UserAvatarsController_GetById_ReturnsNotFound_WhenAvatarDoesNotExist()
         {
             string userId = "user456";
@@ -58,6 +58,7 @@ namespace MySecureBackend.Tests
         }
 
         [TestMethod]
+        //Controleert of dat het toevoegen van een highscore goed werkt en een CreatedAtRouteResult teruggeeft.
         public async Task HighscoreController_AddHighscore_ReturnsCreatedHighscore()
         {
             var newHighscore = new Highscore
