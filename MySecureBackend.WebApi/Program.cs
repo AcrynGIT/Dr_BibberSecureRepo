@@ -91,8 +91,6 @@ app.MapGroup("/account").MapIdentityApi<IdentityUser>().WithTags("Account");
 
 app.MapControllers();
 
-app.MapGet("/", () => "MySecureBackend API is running!");
-
 app.Run();
 
 // Ff kleine push voor azure.
