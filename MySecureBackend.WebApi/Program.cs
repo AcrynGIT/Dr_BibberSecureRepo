@@ -94,3 +94,5 @@ app.MapControllers();
 app.MapGet("/", () => "MySecureBackend API is running!");
 
 app.Run();
+
+// Ff kleine push voor azure.
