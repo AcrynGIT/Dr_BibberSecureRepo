@@ -4,6 +4,7 @@ using Moq;
 using MySecureBackend.WebApi.Controllers;
 using MySecureBackend.WebApi.Models;
 using MySecureBackend.WebApi.Repositories;
+using MySecureBackend.WebApi.Services;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -15,68 +16,77 @@ namespace MySecureBackend.Tests
     {
         private Mock<IHighscoreRepository> highscoreRepoMock;
         private Mock<IUserAvatarRepository> userAvatarRepoMock;
+        private Mock<IAuthenticationService> authServiceMock;
         private HighscoresController highscoresController;
         private UserAvatarsController userAvatarsController;
+        private const string CurrentUserId = "test-user";
 
         [TestInitialize]
         public void Setup()
         {
             highscoreRepoMock = new Mock<IHighscoreRepository>();
             userAvatarRepoMock = new Mock<IUserAvatarRepository>();
+            authServiceMock = new Mock<IAuthenticationService>();
 
-            highscoresController = new HighscoresController(highscoreRepoMock.Object);
-            userAvatarsController = new UserAvatarsController(userAvatarRepoMock.Object);
+            // Zorg dat de mock altijd dezelfde ingelogde gebruiker teruggeeft
+            authServiceMock.Setup(a => a.GetCurrentAuthenticatedUserId()).Returns(CurrentUserId);
+
+            highscoresController = new HighscoresController(highscoreRepoMock.Object, authServiceMock.Object);
+            userAvatarsController = new UserAvatarsController(userAvatarRepoMock.Object, authServiceMock.Object);
         }
 
         [TestMethod]
-        // Controleert dat de API 404 terugstuurt als een highscore niet bestaat.
-        public async Task HighscoreController_GetById_ReturnsNotFound_WhenHighscoreDoesNotExist()
+        public async Task HighscoreController_GetByGame_ReturnsNotFound_WhenHighscoreDoesNotExist()
         {
-            string userId = "user123";
             string gameName = "game123";
 
-            highscoreRepoMock.Setup(r => r.SelectAsync(userId, gameName))
+            highscoreRepoMock.Setup(r => r.SelectAsync(CurrentUserId, gameName))
                              .ReturnsAsync((Highscore?)null);
-            
-            var result = await highscoresController.GetByIdAsync(userId, gameName);
-          
+
+            var result = await highscoresController.GetByGameAsync(gameName);
+
             Assert.IsInstanceOfType(result.Result, typeof(NotFoundObjectResult));
         }
 
         [TestMethod]
-        // Controleert of dat de API een 404 Not Found terugstuurt als een user avatar niet bestaat.
-        public async Task UserAvatarsController_GetById_ReturnsNotFound_WhenAvatarDoesNotExist()
+        public async Task UserAvatarsController_GetAsync_ReturnsNotFound_WhenAvatarDoesNotExist()
         {
-            string userId = "user456";
-
-            userAvatarRepoMock.Setup(r => r.SelectAsync(userId))
+            userAvatarRepoMock.Setup(r => r.SelectAsync(CurrentUserId))
                               .ReturnsAsync((UserAvatar?)null);
-            
-            var result = await userAvatarsController.GetByIdAsync(userId);
-            
+
+            var result = await userAvatarsController.GetAsync();
+
             Assert.IsInstanceOfType(result.Result, typeof(NotFoundObjectResult));
         }
 
         [TestMethod]
-        //Controleert of dat het toevoegen van een highscore goed werkt en een CreatedAtRouteResult teruggeeft.
         public async Task HighscoreController_AddHighscore_ReturnsCreatedHighscore()
         {
             var newHighscore = new Highscore
             {
-                UserId = "user789",
                 GameName = "game789",
                 Score = 100
+                // UserId wordt automatisch gezet door controller
             };
 
-            highscoreRepoMock.Setup(r => r.InsertAsync(newHighscore))
-                             .Returns(Task.CompletedTask);
+            highscoreRepoMock.Setup(r => r.InsertAsync(It.IsAny<Highscore>()))
+                             .Returns(Task.CompletedTask)
+                             .Verifiable();
 
             var result = await highscoresController.AddAsync(newHighscore);
             var createdResult = result.Result as CreatedAtRouteResult;
 
             Assert.IsNotNull(createdResult);
-            Assert.AreEqual("GetHighscoreById", createdResult.RouteName);
-            Assert.AreEqual(newHighscore, createdResult.Value);
+            Assert.AreEqual("GetHighscoreByGame", createdResult.RouteName);
+
+            // Check dat de UserId correct werd gezet
+            var returnedHighscore = createdResult.Value as Highscore;
+            Assert.IsNotNull(returnedHighscore);
+            Assert.AreEqual(CurrentUserId, returnedHighscore.UserId);
+            Assert.AreEqual(newHighscore.GameName, returnedHighscore.GameName);
+            Assert.AreEqual(newHighscore.Score, returnedHighscore.Score);
+
+            highscoreRepoMock.Verify();
         }
     }
 }
