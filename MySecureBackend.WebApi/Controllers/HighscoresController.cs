@@ -31,10 +31,6 @@ public class HighscoresController : ControllerBase
 
         var allHighscores = await _repository.SelectAsync();
 
-        // Normale users zien alleen hun eigen scores
-        if (!User.IsInRole("Admin"))
-            allHighscores = allHighscores.Where(h => h.UserId == currentUserId);
-
         return Ok(allHighscores);
     }
 

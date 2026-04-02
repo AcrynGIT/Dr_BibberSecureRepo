@@ -36,6 +36,7 @@ namespace MySecureBackend.Tests
         }
 
         [TestMethod]
+        // controleren dat de API een 404 Not Found teruggeeft als er geen highscore bestaat voor de gebruiker.
         public async Task HighscoreController_GetByGame_ReturnsNotFound_WhenHighscoreDoesNotExist()
         {
             string gameName = "game123";
@@ -49,6 +50,7 @@ namespace MySecureBackend.Tests
         }
 
         [TestMethod]
+        // controleren dat de API een 404 Not Found teruggeeft als de gebruiker nog geen avatar heeft ingesteld.
         public async Task UserAvatarsController_GetAsync_ReturnsNotFound_WhenAvatarDoesNotExist()
         {
             userAvatarRepoMock.Setup(r => r.SelectAsync(CurrentUserId))
@@ -60,13 +62,14 @@ namespace MySecureBackend.Tests
         }
 
         [TestMethod]
+        // controleren dat het toevoegen van een highscore werkt en dat de controller een CreatedAtRouteResult teruggeeft.
         public async Task HighscoreController_AddHighscore_ReturnsCreatedHighscore()
         {
             var newHighscore = new Highscore
             {
                 GameName = "game789",
                 Score = 100
-                // UserId wordt automatisch gezet door controller
+                
             };
 
             highscoreRepoMock.Setup(r => r.InsertAsync(It.IsAny<Highscore>()))
@@ -79,7 +82,7 @@ namespace MySecureBackend.Tests
             Assert.IsNotNull(createdResult);
             Assert.AreEqual("GetHighscoreByGame", createdResult.RouteName);
 
-            // Check dat de UserId correct werd gezet
+            
             var returnedHighscore = createdResult.Value as Highscore;
             Assert.IsNotNull(returnedHighscore);
             Assert.AreEqual(CurrentUserId, returnedHighscore.UserId);
