@@ -1,71 +1,106 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MySecureBackend.WebApi.Models;
 using MySecureBackend.WebApi.Repositories;
+using MySecureBackend.WebApi.Services;
 
 namespace MySecureBackend.WebApi.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("[controller]")]
 [Consumes("application/json")]
 [Produces("application/json")]
 public class HighscoresController : ControllerBase
 {
     private readonly IHighscoreRepository _repository;
+    private readonly IAuthenticationService _authenticationService;
 
-    public HighscoresController(IHighscoreRepository repository)
+    public HighscoresController(IHighscoreRepository repository, IAuthenticationService authenticationService)
     {
         _repository = repository;
+        _authenticationService = authenticationService;
     }
 
     [HttpGet(Name = "GetHighscores")]
     public async Task<ActionResult<IEnumerable<Highscore>>> GetAsync()
     {
-        var highscores = await _repository.SelectAsync();
-        return Ok(highscores);
+        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
+        if (string.IsNullOrEmpty(currentUserId))
+            return Forbid();
+
+        var allHighscores = await _repository.SelectAsync();
+
+        // Normale users zien alleen hun eigen scores
+        if (!User.IsInRole("Admin"))
+            allHighscores = allHighscores.Where(h => h.UserId == currentUserId);
+
+        return Ok(allHighscores);
     }
 
-    [HttpGet("{userId}/{gameName}", Name = "GetHighscoreById")]
-    public async Task<ActionResult<Highscore>> GetByIdAsync(string userId, string gameName)
+    [HttpGet("{gameName}", Name = "GetHighscoreByGame")]
+    public async Task<ActionResult<Highscore>> GetByGameAsync(string gameName)
     {
-        var highscore = await _repository.SelectAsync(userId, gameName);
+        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
+        if (string.IsNullOrEmpty(currentUserId))
+            return Forbid();
+
+        var highscore = await _repository.SelectAsync(currentUserId, gameName);
         if (highscore == null)
-            return NotFound(new ProblemDetails { Detail = $"Highscore for {userId} / {gameName} not found" });
+            return NotFound(new ProblemDetails { Detail = $"Highscore for {gameName} not found" });
+
         return Ok(highscore);
     }
 
     [HttpPost(Name = "AddHighscore")]
     public async Task<ActionResult<Highscore>> AddAsync(Highscore highscore)
     {
+        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
+        if (string.IsNullOrEmpty(currentUserId))
+            return Forbid();
+
+        highscore.UserId = currentUserId;
         highscore.UpdatedAt = DateTime.UtcNow;
+
         await _repository.InsertAsync(highscore);
-        return CreatedAtRoute("GetHighscoreById",
-                              new { userId = highscore.UserId, gameName = highscore.GameName },
+
+        return CreatedAtRoute("GetHighscoreByGame",
+                              new { gameName = highscore.GameName },
                               highscore);
     }
 
-    [HttpPut("{userId}/{gameName}", Name = "UpdateHighscore")]
-    public async Task<ActionResult<Highscore>> UpdateAsync(string userId, string gameName, Highscore highscore)
+    [HttpPut("{gameName}", Name = "UpdateHighscore")]
+    public async Task<ActionResult<Highscore>> UpdateAsync(string gameName, Highscore highscore)
     {
-        var existing = await _repository.SelectAsync(userId, gameName);
+        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
+        if (string.IsNullOrEmpty(currentUserId))
+            return Forbid();
+
+        var existing = await _repository.SelectAsync(currentUserId, gameName);
         if (existing == null)
-            return NotFound(new ProblemDetails { Detail = $"Highscore for {userId} / {gameName} not found" });
+            return NotFound(new ProblemDetails { Detail = $"Highscore for {gameName} not found" });
 
-        if (userId != highscore.UserId || gameName != highscore.GameName)
-            return Conflict(new ProblemDetails { Detail = "Route keys do not match body keys" });
-
+        highscore.UserId = currentUserId;
+        highscore.GameName = gameName;
         highscore.UpdatedAt = DateTime.UtcNow;
+
         await _repository.UpdateAsync(highscore);
+
         return Ok(highscore);
     }
 
-    [HttpDelete("{userId}/{gameName}", Name = "DeleteHighscore")]
-    public async Task<ActionResult> DeleteAsync(string userId, string gameName)
+    [HttpDelete("{gameName}", Name = "DeleteHighscore")]
+    public async Task<ActionResult> DeleteAsync(string gameName)
     {
-        var existing = await _repository.SelectAsync(userId, gameName);
-        if (existing == null)
-            return NotFound(new ProblemDetails { Detail = $"Highscore for {userId} / {gameName} not found" });
+        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
+        if (string.IsNullOrEmpty(currentUserId))
+            return Forbid();
 
-        await _repository.DeleteAsync(userId, gameName);
+        var existing = await _repository.SelectAsync(currentUserId, gameName);
+        if (existing == null)
+            return NotFound(new ProblemDetails { Detail = $"Highscore for {gameName} not found" });
+
+        await _repository.DeleteAsync(currentUserId, gameName);
         return Ok();
     }
 }

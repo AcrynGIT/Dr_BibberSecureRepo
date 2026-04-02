@@ -6,9 +6,10 @@ using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Controllers
 builder.Services.AddControllers();
 
-// Retrieve the SQL connection string from configuration.
+// Retrieve the SQL connection string
 var sqlConnectionString = builder.Configuration.GetValue<string>("SqlConnectionString");
 var sqlConnectionStringFound = !string.IsNullOrWhiteSpace(sqlConnectionString);
 
@@ -29,23 +30,7 @@ else
     builder.Services.AddSingleton<IHighscoreRepository>(new SqlHighscoreRepository(sqlConnectionString!));
 }
 
-// ExampleObject repository (kept from original)
-builder.Services.AddTransient<IExampleObjectRepository, MemoryExampleObjectRepository>();
-// To use SQL-backed ExampleObject:
-// builder.Services.AddTransient<IExampleObjectRepository, SqlExampleObjectRepository>(o => new SqlExampleObjectRepository(sqlConnectionString!));
-
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "MySecureBackend API",
-        Version = "v1",
-    });
-});
-
-builder.Services.Configure<RouteOptions>(o => o.LowercaseUrls = true);
-
+// Identity + Authentication
 builder.Services.AddAuthorization();
 
 builder.Services.AddIdentityApiEndpoints<IdentityUser>(options =>
@@ -62,8 +47,46 @@ builder.Services.AddIdentityApiEndpoints<IdentityUser>(options =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<IAuthenticationService, AspNetIdentityAuthenticationService>();
 
+// Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "MySecureBackend API",
+        Version = "v1",
+    });
+});
+
+// Lowercase URLs
+builder.Services.Configure<RouteOptions>(o => o.LowercaseUrls = true);
+
 var app = builder.Build();
 
+// Seed roles and admin account
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+
+    if (!await roleManager.RoleExistsAsync("Admin"))
+        await roleManager.CreateAsync(new IdentityRole("Admin"));
+
+    if (!await roleManager.RoleExistsAsync("User"))
+        await roleManager.CreateAsync(new IdentityRole("User"));
+
+    // Create admin account if not exists
+    var adminEmail = "admin@test.com";
+    var adminUser = await userManager.FindByEmailAsync(adminEmail);
+    if (adminUser == null)
+    {
+        adminUser = new IdentityUser { UserName = adminEmail, Email = adminEmail };
+        await userManager.CreateAsync(adminUser, "Admin123!");
+        await userManager.AddToRoleAsync(adminUser, "Admin");
+    }
+}
+
+// Swagger UI
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -87,12 +110,10 @@ else
 app.UseHttpsRedirection();
 app.UseAuthorization();
 
+// Identity endpoints
 app.MapGroup("/account").MapIdentityApi<IdentityUser>().WithTags("Account");
 
+// Controllers
 app.MapControllers();
 
 app.Run();
-
-// Ff kleine push voor azure.
-// nog een keer.
-// nog een keer.

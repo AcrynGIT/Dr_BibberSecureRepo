@@ -1,68 +1,86 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using MySecureBackend.WebApi.Models;
 using MySecureBackend.WebApi.Repositories;
+using MySecureBackend.WebApi.Services;
 
 namespace MySecureBackend.WebApi.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("[controller]")]
 [Consumes("application/json")]
 [Produces("application/json")]
 public class UserAvatarsController : ControllerBase
 {
     private readonly IUserAvatarRepository _repository;
+    private readonly IAuthenticationService _authenticationService;
 
-    public UserAvatarsController(IUserAvatarRepository repository)
+    public UserAvatarsController(IUserAvatarRepository repository, IAuthenticationService authenticationService)
     {
         _repository = repository;
+        _authenticationService = authenticationService;
     }
 
-    [HttpGet(Name = "GetUserAvatars")]
-    public async Task<ActionResult<IEnumerable<UserAvatar>>> GetAsync()
+    [HttpGet(Name = "GetUserAvatar")]
+    public async Task<ActionResult<UserAvatar>> GetAsync()
     {
-        var avatars = await _repository.SelectAsync();
-        return Ok(avatars);
-    }
+        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
+        if (string.IsNullOrEmpty(currentUserId))
+            return Forbid();
 
-    [HttpGet("{userId}", Name = "GetUserAvatarById")]
-    public async Task<ActionResult<UserAvatar>> GetByIdAsync(string userId)
-    {
-        var avatar = await _repository.SelectAsync(userId);
+        var avatar = await _repository.SelectAsync(currentUserId);
         if (avatar == null)
-            return NotFound(new ProblemDetails { Detail = $"UserAvatar for {userId} not found" });
+            return NotFound(new ProblemDetails { Detail = "User avatar not found" });
+
         return Ok(avatar);
     }
 
     [HttpPost(Name = "AddUserAvatar")]
     public async Task<ActionResult<UserAvatar>> AddAsync(UserAvatar avatar)
     {
+        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
+        if (string.IsNullOrEmpty(currentUserId))
+            return Forbid();
+
+        avatar.UserId = currentUserId;
         avatar.SelectedAt = DateTime.UtcNow;
+
         await _repository.InsertAsync(avatar);
-        return CreatedAtRoute("GetUserAvatarById", new { userId = avatar.UserId }, avatar);
+
+        return CreatedAtRoute("GetUserAvatar", null, avatar);
     }
 
-    [HttpPut("{userId}", Name = "UpdateUserAvatar")]
-    public async Task<ActionResult<UserAvatar>> UpdateAsync(string userId, UserAvatar avatar)
+    [HttpPut(Name = "UpdateUserAvatar")]
+    public async Task<ActionResult<UserAvatar>> UpdateAsync(UserAvatar avatar)
     {
-        var existing = await _repository.SelectAsync(userId);
-        if (existing == null)
-            return NotFound(new ProblemDetails { Detail = $"UserAvatar for {userId} not found" });
+        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
+        if (string.IsNullOrEmpty(currentUserId))
+            return Forbid();
 
-        if (userId != avatar.UserId)
-            return Conflict(new ProblemDetails { Detail = "The UserId in the route does not match the body" });
+        var existing = await _repository.SelectAsync(currentUserId);
+        if (existing == null)
+            return NotFound(new ProblemDetails { Detail = "User avatar not found" });
+
+        avatar.UserId = currentUserId;
+        avatar.SelectedAt = DateTime.UtcNow;
 
         await _repository.UpdateAsync(avatar);
         return Ok(avatar);
     }
 
-    [HttpDelete("{userId}", Name = "DeleteUserAvatar")]
-    public async Task<ActionResult> DeleteAsync(string userId)
+    [HttpDelete(Name = "DeleteUserAvatar")]
+    public async Task<ActionResult> DeleteAsync()
     {
-        var existing = await _repository.SelectAsync(userId);
-        if (existing == null)
-            return NotFound(new ProblemDetails { Detail = $"UserAvatar for {userId} not found" });
+        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
+        if (string.IsNullOrEmpty(currentUserId))
+            return Forbid();
 
-        await _repository.DeleteAsync(userId);
+        var existing = await _repository.SelectAsync(currentUserId);
+        if (existing == null)
+            return NotFound(new ProblemDetails { Detail = "User avatar not found" });
+
+        await _repository.DeleteAsync(currentUserId);
         return Ok();
     }
 }
