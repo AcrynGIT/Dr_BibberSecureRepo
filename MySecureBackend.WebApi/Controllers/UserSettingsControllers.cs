@@ -22,7 +22,6 @@ public class UserSettingsController : ControllerBase
         _authenticationService = authenticationService;
     }
 
-    
     [HttpGet(Name = "GetUserSettings")]
     public async Task<ActionResult<UserSettings>> GetAsync()
     {
@@ -38,7 +37,6 @@ public class UserSettingsController : ControllerBase
         return Ok(settings);
     }
 
-    
     [HttpPost(Name = "CreateUserSettings")]
     public async Task<ActionResult<UserSettings>> CreateAsync(UserSettings settings)
     {
@@ -55,10 +53,10 @@ public class UserSettingsController : ControllerBase
 
         await _repository.InsertAsync(settings);
 
-        return CreatedAtRoute("GetUserSettings", null, settings);
+        // Gebruik Ok() in plaats van CreatedAtRoute om 500 te voorkomen
+        return Ok(settings);
     }
 
-    
     [HttpPut(Name = "UpdateUserSettings")]
     public async Task<ActionResult<UserSettings>> UpdateAsync(UserSettings settings)
     {
@@ -78,7 +76,6 @@ public class UserSettingsController : ControllerBase
         return Ok(settings);
     }
 
-    
     [HttpDelete(Name = "DeleteUserSettings")]
     public async Task<ActionResult> DeleteAsync()
     {
