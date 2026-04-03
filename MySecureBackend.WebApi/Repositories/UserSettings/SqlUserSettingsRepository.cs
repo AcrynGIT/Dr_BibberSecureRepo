@@ -13,7 +13,6 @@ namespace MySecureBackend.WebApi.Repositories
             this.sqlConnectionString = sqlConnectionString;
         }
 
-        // INSERT nieuwe UserSettings
         public async Task InsertAsync(UserSettings settings)
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);
@@ -25,7 +24,6 @@ namespace MySecureBackend.WebApi.Repositories
             );
         }
 
-        // SELECT UserSettings voor een specifieke user
         public async Task<UserSettings?> SelectAsync(string userId)
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);
@@ -35,14 +33,6 @@ namespace MySecureBackend.WebApi.Repositories
             );
         }
 
-        // SELECT alle UserSettings (optioneel)
-        public async Task<IEnumerable<UserSettings>> SelectAsync()
-        {
-            using var sqlConnection = new SqlConnection(sqlConnectionString);
-            return await sqlConnection.QueryAsync<UserSettings>("SELECT * FROM [UserSettings]");
-        }
-
-        // UPDATE bestaande UserSettings
         public async Task UpdateAsync(UserSettings settings)
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);
@@ -60,7 +50,6 @@ namespace MySecureBackend.WebApi.Repositories
             );
         }
 
-        // DELETE UserSettings voor een specifieke user
         public async Task DeleteAsync(string userId)
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);

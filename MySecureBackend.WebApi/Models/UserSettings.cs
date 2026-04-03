@@ -11,7 +11,7 @@
         public string ArtsNaam { get; set; } = null!;
         public string BehandelingType { get; set; } = null!;
 
-        public DateTime Behandeldatum { get; set; }
+        public string Behandeldatum { get; set; }
 
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }

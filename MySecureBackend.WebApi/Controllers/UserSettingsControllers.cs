@@ -25,70 +25,96 @@ public class UserSettingsController : ControllerBase
     [HttpGet(Name = "GetUserSettings")]
     public async Task<ActionResult<UserSettings>> GetAsync()
     {
-        var userId = _authenticationService.GetCurrentAuthenticatedUserId();
-        if (string.IsNullOrEmpty(userId))
-            return Forbid();
+        try
+        {
+            var userId = _authenticationService.GetCurrentAuthenticatedUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Forbid();
 
-        var settings = await _repository.SelectAsync(userId);
+            var settings = await _repository.SelectAsync(userId);
+            if (settings == null)
+                return NotFound(new ProblemDetails { Detail = "UserSettings not found" });
 
-        if (settings == null)
-            return NotFound(new ProblemDetails { Detail = "UserSettings not found" });
-
-        return Ok(settings);
+            return Ok(settings);
+        }
+        catch (Exception ex)
+        {
+            return Problem(detail: ex.ToString());
+        }
     }
 
     [HttpPost(Name = "CreateUserSettings")]
     public async Task<ActionResult<UserSettings>> CreateAsync(UserSettings settings)
     {
-        var userId = _authenticationService.GetCurrentAuthenticatedUserId();
-        if (string.IsNullOrEmpty(userId))
-            return Forbid();
+        try
+        {
+            var userId = _authenticationService.GetCurrentAuthenticatedUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Forbid();
 
-        var existing = await _repository.SelectAsync(userId);
-        if (existing != null)
-            return Conflict(new ProblemDetails { Detail = "UserSettings already exist" });
+            var existing = await _repository.SelectAsync(userId);
+            if (existing != null)
+                return Conflict(new ProblemDetails { Detail = "UserSettings already exist" });
 
-        settings.UserId = userId;
-        settings.UpdatedAt = DateTime.UtcNow;
+            settings.UserId = userId;
+            settings.UpdatedAt = DateTime.UtcNow;
 
-        await _repository.InsertAsync(settings);
+            await _repository.InsertAsync(settings);
 
-        // Gebruik Ok() in plaats van CreatedAtRoute om 500 te voorkomen
-        return Ok(settings);
+            return CreatedAtRoute("GetUserSettings", null, settings);
+        }
+        catch (Exception ex)
+        {
+            return Problem(detail: ex.ToString());
+        }
     }
 
     [HttpPut(Name = "UpdateUserSettings")]
     public async Task<ActionResult<UserSettings>> UpdateAsync(UserSettings settings)
     {
-        var userId = _authenticationService.GetCurrentAuthenticatedUserId();
-        if (string.IsNullOrEmpty(userId))
-            return Forbid();
+        try
+        {
+            var userId = _authenticationService.GetCurrentAuthenticatedUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Forbid();
 
-        var existing = await _repository.SelectAsync(userId);
-        if (existing == null)
-            return NotFound(new ProblemDetails { Detail = "UserSettings not found" });
+            var existing = await _repository.SelectAsync(userId);
+            if (existing == null)
+                return NotFound(new ProblemDetails { Detail = "UserSettings not found" });
 
-        settings.UserId = userId;
-        settings.UpdatedAt = DateTime.UtcNow;
+            settings.UserId = userId;
+            settings.UpdatedAt = DateTime.UtcNow;
 
-        await _repository.UpdateAsync(settings);
+            await _repository.UpdateAsync(settings);
 
-        return Ok(settings);
+            return Ok(settings);
+        }
+        catch (Exception ex)
+        {
+            return Problem(detail: ex.ToString());
+        }
     }
 
     [HttpDelete(Name = "DeleteUserSettings")]
     public async Task<ActionResult> DeleteAsync()
     {
-        var userId = _authenticationService.GetCurrentAuthenticatedUserId();
-        if (string.IsNullOrEmpty(userId))
-            return Forbid();
+        try
+        {
+            var userId = _authenticationService.GetCurrentAuthenticatedUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Forbid();
 
-        var existing = await _repository.SelectAsync(userId);
-        if (existing == null)
-            return NotFound(new ProblemDetails { Detail = "UserSettings not found" });
+            var existing = await _repository.SelectAsync(userId);
+            if (existing == null)
+                return NotFound(new ProblemDetails { Detail = "UserSettings not found" });
 
-        await _repository.DeleteAsync(userId);
+            await _repository.DeleteAsync(userId);
 
-        return Ok();
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return Problem(detail: ex.ToString());
+        }
     }
 }
