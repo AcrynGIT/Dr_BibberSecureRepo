@@ -2,11 +2,12 @@
 
 namespace MySecureBackend.WebApi.Repositories
 {
-    public interface IUserSettingsRepository
+    public interface IUserSettingRepository
     {
-        Task<UserSettings?> SelectAsync(string userId);
-        Task InsertAsync(UserSettings settings);
-        Task UpdateAsync(UserSettings settings);
-        Task DeleteAsync(string userId);
+        Task InsertAsync(UserSetting userSetting);
+        Task DeleteAsync(string userId, string kindVoornaam, string kindAchternaam);
+        Task<IEnumerable<UserSetting>> SelectAsync();
+        Task<UserSetting?> SelectAsync(string userId, string kindVoornaam, string kindAchternaam);
+        Task UpdateAsync(UserSetting userSetting);
     }
 }
