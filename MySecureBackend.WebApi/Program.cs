@@ -17,6 +17,7 @@ if (useInMemory)
 {
     builder.Services.AddSingleton<IUserAvatarRepository, MemoryUserAvatarRepository>();
     builder.Services.AddSingleton<IHighscoreRepository, MemoryHighscoreRepository>();
+    builder.Services.AddSingleton<IUserSettingRepository, MemoryUserSettingRepository>();
 }
 else
 {
@@ -25,6 +26,7 @@ else
 
     builder.Services.AddSingleton<IUserAvatarRepository>(new SqlUserAvatarRepository(sqlConnectionString!));
     builder.Services.AddSingleton<IHighscoreRepository>(new SqlHighscoreRepository(sqlConnectionString!));
+    builder.Services.AddSingleton<IUserSettingRepository>(new SqlUserSettingRepository(sqlConnectionString!));
 }
 
 builder.Services.AddAuthorization();
