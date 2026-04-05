@@ -8,7 +8,7 @@ namespace MySecureBackend.WebApi.Controllers;
 
 [ApiController]
 [Authorize]
-[Route("[controller]")]
+[Route("highscores")]
 [Consumes("application/json")]
 [Produces("application/json")]
 public class HighscoresController : ControllerBase
@@ -22,81 +22,62 @@ public class HighscoresController : ControllerBase
         _authenticationService = authenticationService;
     }
 
-    [HttpGet(Name = "GetHighscores")]
-    public async Task<ActionResult<IEnumerable<Highscore>>> GetAsync()
+    // GET /highscores -> leaderboard
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Highscore>>> GetAll()
     {
-        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
-        if (string.IsNullOrEmpty(currentUserId))
-            return Forbid();
-
-        var allHighscores = await _repository.SelectAsync();
-
-        return Ok(allHighscores);
+        var highscores = await _repository.SelectAsync();
+        return Ok(highscores);
     }
 
-    [HttpGet("{gameName}", Name = "GetHighscoreByGame")]
-    public async Task<ActionResult<Highscore>> GetByGameAsync(string gameName)
+    // POST /highscores -> nieuwe score toevoegen
+    [HttpPost]
+    public async Task<ActionResult<Highscore>> Add(Highscore highscore)
     {
-        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
-        if (string.IsNullOrEmpty(currentUserId))
+        var userId = _authenticationService.GetCurrentAuthenticatedUserId();
+        if (string.IsNullOrEmpty(userId))
             return Forbid();
 
-        var highscore = await _repository.SelectAsync(currentUserId, gameName);
-        if (highscore == null)
-            return NotFound(new ProblemDetails { Detail = $"Highscore for {gameName} not found" });
-
-        return Ok(highscore);
-    }
-
-    [HttpPost(Name = "AddHighscore")]
-    public async Task<ActionResult<Highscore>> AddAsync(Highscore highscore)
-    {
-        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
-        if (string.IsNullOrEmpty(currentUserId))
-            return Forbid();
-
-        highscore.UserId = currentUserId;
+        highscore.UserId = userId;
         highscore.UpdatedAt = DateTime.UtcNow;
 
         await _repository.InsertAsync(highscore);
 
-        return CreatedAtRoute("GetHighscoreByGame",
-                              new { gameName = highscore.GameName },
-                              highscore);
+        return Created("/highscores", highscore);
     }
 
-    [HttpPut("{gameName}", Name = "UpdateHighscore")]
-    public async Task<ActionResult<Highscore>> UpdateAsync(string gameName, Highscore highscore)
+    // PUT /highscores -> bestaande score updaten
+    [HttpPut]
+    public async Task<ActionResult<Highscore>> Update(Highscore highscore)
     {
-        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
-        if (string.IsNullOrEmpty(currentUserId))
+        var userId = _authenticationService.GetCurrentAuthenticatedUserId();
+        if (string.IsNullOrEmpty(userId))
             return Forbid();
 
-        var existing = await _repository.SelectAsync(currentUserId, gameName);
-        if (existing == null)
-            return NotFound(new ProblemDetails { Detail = $"Highscore for {gameName} not found" });
+        var existing = await _repository.SelectAsync(userId);
 
-        highscore.UserId = currentUserId;
-        highscore.GameName = gameName;
+        highscore.UserId = userId;
         highscore.UpdatedAt = DateTime.UtcNow;
+
+        if (existing == null)
+        {
+            return NotFound(new ProblemDetails { Detail = "Score bestaat nog niet, gebruik POST om aan te maken" });
+        }
 
         await _repository.UpdateAsync(highscore);
 
         return Ok(highscore);
     }
 
-    [HttpDelete("{gameName}", Name = "DeleteHighscore")]
-    public async Task<ActionResult> DeleteAsync(string gameName)
+    // DELETE /highscores -> delete score
+    [HttpDelete]
+    public async Task<ActionResult> Delete()
     {
-        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
-        if (string.IsNullOrEmpty(currentUserId))
+        var userId = _authenticationService.GetCurrentAuthenticatedUserId();
+        if (string.IsNullOrEmpty(userId))
             return Forbid();
 
-        var existing = await _repository.SelectAsync(currentUserId, gameName);
-        if (existing == null)
-            return NotFound(new ProblemDetails { Detail = $"Highscore for {gameName} not found" });
-
-        await _repository.DeleteAsync(currentUserId, gameName);
+        await _repository.DeleteAsync(userId);
         return Ok();
     }
 }

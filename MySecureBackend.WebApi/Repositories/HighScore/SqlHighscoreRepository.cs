@@ -13,45 +13,62 @@ namespace MySecureBackend.WebApi.Repositories
             this.sqlConnectionString = sqlConnectionString;
         }
 
+        // POST: voeg score toe als die nog niet bestaat
         public async Task InsertAsync(Highscore highscore)
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);
+
+            var existing = await SelectAsync(highscore.UserId);
+            if (existing != null)
+                throw new InvalidOperationException("Score bestaat al. Gebruik PUT om te updaten.");
+
             await sqlConnection.ExecuteAsync(
-                "INSERT INTO [Highscores] (UserId, GameName, Score, UpdatedAt) VALUES (@UserId, @GameName, @Score, @UpdatedAt)",
+                "INSERT INTO [Highscores] (UserId, Score, UpdatedAt) VALUES (@UserId, @Score, @UpdatedAt)",
                 highscore
             );
         }
 
-        public async Task<Highscore?> SelectAsync(string userId, string gameName)
+        // GET: score van user
+        public async Task<Highscore?> SelectAsync(string userId)
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);
             return await sqlConnection.QuerySingleOrDefaultAsync<Highscore>(
-                "SELECT * FROM [Highscores] WHERE UserId = @userId AND GameName = @gameName",
-                new { userId, gameName }
+                "SELECT * FROM [Highscores] WHERE UserId = @userId",
+                new { userId }
             );
         }
 
+        // GET: alle scores
         public async Task<IEnumerable<Highscore>> SelectAsync()
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);
-            return await sqlConnection.QueryAsync<Highscore>("SELECT * FROM [Highscores]");
+            return await sqlConnection.QueryAsync<Highscore>(
+                "SELECT * FROM [Highscores] ORDER BY Score DESC"
+            );
         }
 
+        // PUT: update bestaande score
         public async Task UpdateAsync(Highscore highscore)
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);
+
+            var existing = await SelectAsync(highscore.UserId);
+            if (existing == null)
+                throw new InvalidOperationException("Score bestaat nog niet. Gebruik POST om aan te maken.");
+
             await sqlConnection.ExecuteAsync(
-                "UPDATE [Highscores] SET Score = @Score, UpdatedAt = @UpdatedAt WHERE UserId = @UserId AND GameName = @GameName",
+                "UPDATE [Highscores] SET Score = @Score, UpdatedAt = @UpdatedAt WHERE UserId = @UserId",
                 highscore
             );
         }
 
-        public async Task DeleteAsync(string userId, string gameName)
+        // DELETE: score verwijderen
+        public async Task DeleteAsync(string userId)
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);
             await sqlConnection.ExecuteAsync(
-                "DELETE FROM [Highscores] WHERE UserId = @userId AND GameName = @gameName",
-                new { userId, gameName }
+                "DELETE FROM [Highscores] WHERE UserId = @userId",
+                new { userId }
             );
         }
     }

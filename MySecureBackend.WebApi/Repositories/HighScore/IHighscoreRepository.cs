@@ -5,9 +5,9 @@ namespace MySecureBackend.WebApi.Repositories
     public interface IHighscoreRepository
     {
         Task InsertAsync(Highscore highscore);
-        Task DeleteAsync(string userId, string gameName);
+        Task DeleteAsync(string userId);
         Task<IEnumerable<Highscore>> SelectAsync();
-        Task<Highscore?> SelectAsync(string userId, string gameName);
+        Task<Highscore?> SelectAsync(string userId);
         Task UpdateAsync(Highscore highscore);
     }
 }
