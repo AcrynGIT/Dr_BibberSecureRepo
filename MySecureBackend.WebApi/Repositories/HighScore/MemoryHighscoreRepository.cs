@@ -1,4 +1,7 @@
 ﻿using MySecureBackend.WebApi.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MySecureBackend.WebApi.Repositories
 {
@@ -38,7 +41,6 @@ namespace MySecureBackend.WebApi.Repositories
                 throw new InvalidOperationException("Score bestaat nog niet. Gebruik POST om aan te maken.");
 
             existing.Score = highscore.Score;
-            existing.UpdatedAt = highscore.UpdatedAt;
             return Task.CompletedTask;
         }
     }

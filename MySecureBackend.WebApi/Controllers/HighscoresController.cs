@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using MySecureBackend.WebApi.Models;
 using MySecureBackend.WebApi.Repositories;
 using MySecureBackend.WebApi.Services;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace MySecureBackend.WebApi.Controllers;
 
@@ -22,14 +24,14 @@ public class HighscoresController : ControllerBase
         _authenticationService = authenticationService;
     }
 
-    [HttpGet(Name = "GetHighscore")]
+    [HttpGet(Name = "GetHighscores")]
     public async Task<ActionResult<IEnumerable<Highscore>>> GetAll()
     {
         var highscores = await _repository.SelectAsync();
         return Ok(highscores);
     }
 
-    [HttpPost(Name = "PostHighscore")]
+    [HttpPost(Name = "AddHighscores")]
     public async Task<ActionResult<Highscore>> Add(Highscore highscore)
     {
         var userId = _authenticationService.GetCurrentAuthenticatedUserId();
@@ -37,14 +39,12 @@ public class HighscoresController : ControllerBase
             return Forbid();
 
         highscore.UserId = userId;
-        highscore.UpdatedAt = DateTime.UtcNow;
-
         await _repository.InsertAsync(highscore);
 
         return Created("/highscores", highscore);
     }
 
-    [HttpPut(Name = "UpdateHighscore")]
+    [HttpPut(Name = "UpdateHighscores")]
     public async Task<ActionResult<Highscore>> Update(Highscore highscore)
     {
         var userId = _authenticationService.GetCurrentAuthenticatedUserId();
@@ -56,14 +56,12 @@ public class HighscoresController : ControllerBase
             return NotFound(new ProblemDetails { Detail = "Score bestaat nog niet. Gebruik POST om aan te maken" });
 
         highscore.UserId = userId;
-        highscore.UpdatedAt = DateTime.UtcNow;
-
         await _repository.UpdateAsync(highscore);
 
         return Ok(highscore);
     }
 
-    [HttpDelete(Name = "DeleteHighscore")]
+    [HttpDelete(Name = "DeleteHighscores")]
     public async Task<ActionResult> Delete()
     {
         var userId = _authenticationService.GetCurrentAuthenticatedUserId();

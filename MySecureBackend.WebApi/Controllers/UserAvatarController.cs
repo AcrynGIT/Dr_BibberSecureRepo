@@ -3,12 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 using MySecureBackend.WebApi.Models;
 using MySecureBackend.WebApi.Repositories;
 using MySecureBackend.WebApi.Services;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace MySecureBackend.WebApi.Controllers;
 
 [ApiController]
 [Authorize]
-[Route("[controller]")]
+[Route("useravatars")]
 [Consumes("application/json")]
 [Produces("application/json")]
 public class UserAvatarsController : ControllerBase
@@ -22,65 +24,58 @@ public class UserAvatarsController : ControllerBase
         _authenticationService = authenticationService;
     }
 
-    [HttpGet(Name = "GetUserAvatar")]
-    public async Task<ActionResult<UserAvatar>> GetAsync()
+    [HttpGet(Name = "GetUseravatars")]
+    public async Task<ActionResult<UserAvatar>> Get()
     {
-        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
-        if (string.IsNullOrEmpty(currentUserId))
+        var userId = _authenticationService.GetCurrentAuthenticatedUserId();
+        if (string.IsNullOrEmpty(userId))
             return Forbid();
 
-        var avatar = await _repository.SelectAsync(currentUserId);
+        var avatar = await _repository.SelectAsync(userId);
         if (avatar == null)
             return NotFound(new ProblemDetails { Detail = "User avatar not found" });
 
         return Ok(avatar);
     }
 
-    [HttpPost(Name = "AddUserAvatar")]
-    public async Task<ActionResult<UserAvatar>> AddAsync(UserAvatar avatar)
+    [HttpPost(Name = "AddUserAvatars")]
+    public async Task<ActionResult<UserAvatar>> Add(UserAvatar avatar)
     {
-        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
-        if (string.IsNullOrEmpty(currentUserId))
+        var userId = _authenticationService.GetCurrentAuthenticatedUserId();
+        if (string.IsNullOrEmpty(userId))
             return Forbid();
 
-        avatar.UserId = currentUserId;
-        avatar.SelectedAt = DateTime.UtcNow;
-
+        avatar.UserId = userId;
         await _repository.InsertAsync(avatar);
 
-        return CreatedAtRoute("GetUserAvatar", null, avatar);
+        return Created("/useravatars", avatar);
     }
 
-    [HttpPut(Name = "UpdateUserAvatar")]
-    public async Task<ActionResult<UserAvatar>> UpdateAsync(UserAvatar avatar)
+    [HttpPut(Name = "UpdateUserAvatars")]
+    public async Task<ActionResult<UserAvatar>> Update(UserAvatar avatar)
     {
-        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
-        if (string.IsNullOrEmpty(currentUserId))
+        var userId = _authenticationService.GetCurrentAuthenticatedUserId();
+        if (string.IsNullOrEmpty(userId))
             return Forbid();
 
-        var existing = await _repository.SelectAsync(currentUserId);
+        var existing = await _repository.SelectAsync(userId);
         if (existing == null)
-            return NotFound(new ProblemDetails { Detail = "User avatar not found" });
+            return NotFound(new ProblemDetails { Detail = "Avatar bestaat nog niet. Gebruik POST om aan te maken" });
 
-        avatar.UserId = currentUserId;
-        avatar.SelectedAt = DateTime.UtcNow;
-
+        avatar.UserId = userId;
         await _repository.UpdateAsync(avatar);
+
         return Ok(avatar);
     }
 
-    [HttpDelete(Name = "DeleteUserAvatar")]
-    public async Task<ActionResult> DeleteAsync()
+    [HttpDelete(Name = "DeleteUserAvatars")]
+    public async Task<ActionResult> Delete()
     {
-        var currentUserId = _authenticationService.GetCurrentAuthenticatedUserId();
-        if (string.IsNullOrEmpty(currentUserId))
+        var userId = _authenticationService.GetCurrentAuthenticatedUserId();
+        if (string.IsNullOrEmpty(userId))
             return Forbid();
 
-        var existing = await _repository.SelectAsync(currentUserId);
-        if (existing == null)
-            return NotFound(new ProblemDetails { Detail = "User avatar not found" });
-
-        await _repository.DeleteAsync(currentUserId);
+        await _repository.DeleteAsync(userId);
         return Ok();
     }
 }

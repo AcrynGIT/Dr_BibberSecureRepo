@@ -1,4 +1,7 @@
 ﻿using MySecureBackend.WebApi.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MySecureBackend.WebApi.Repositories
 {
@@ -6,15 +9,18 @@ namespace MySecureBackend.WebApi.Repositories
     {
         private static List<UserAvatar> userAvatars = new();
 
-        public Task DeleteAsync(string userId)
+        public Task InsertAsync(UserAvatar userAvatar)
         {
-            userAvatars.RemoveAll(x => x.UserId == userId);
+            if (userAvatars.Any(x => x.UserId == userAvatar.UserId))
+                throw new InvalidOperationException("Avatar bestaat al. Gebruik PUT om te updaten.");
+
+            userAvatars.Add(userAvatar);
             return Task.CompletedTask;
         }
 
-        public Task InsertAsync(UserAvatar userAvatar)
+        public Task DeleteAsync(string userId)
         {
-            userAvatars.Add(userAvatar);
+            userAvatars.RemoveAll(x => x.UserId == userId);
             return Task.CompletedTask;
         }
 
@@ -28,10 +34,14 @@ namespace MySecureBackend.WebApi.Repositories
             return Task.FromResult(userAvatars.SingleOrDefault(x => x.UserId == userId));
         }
 
-        public async Task UpdateAsync(UserAvatar userAvatar)
+        public Task UpdateAsync(UserAvatar userAvatar)
         {
-            await DeleteAsync(userAvatar.UserId);
-            await InsertAsync(userAvatar);
+            var existing = userAvatars.SingleOrDefault(x => x.UserId == userAvatar.UserId);
+            if (existing == null)
+                throw new InvalidOperationException("Avatar bestaat nog niet. Gebruik POST om aan te maken.");
+
+            existing.AvatarId = userAvatar.AvatarId;
+            return Task.CompletedTask;
         }
     }
 }

@@ -1,6 +1,8 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
 using MySecureBackend.WebApi.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace MySecureBackend.WebApi.Repositories
 {
@@ -16,13 +18,12 @@ namespace MySecureBackend.WebApi.Repositories
         public async Task InsertAsync(Highscore highscore)
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);
-
             var existing = await SelectAsync(highscore.UserId);
             if (existing != null)
                 throw new InvalidOperationException("Score bestaat al. Gebruik PUT om te updaten.");
 
             await sqlConnection.ExecuteAsync(
-                "INSERT INTO [Highscores] (UserId, Score, UpdatedAt) VALUES (@UserId, @Score, @UpdatedAt)",
+                "INSERT INTO [Highscores] (UserId, Score) VALUES (@UserId, @Score)",
                 highscore
             );
         }
@@ -39,21 +40,18 @@ namespace MySecureBackend.WebApi.Repositories
         public async Task<IEnumerable<Highscore>> SelectAsync()
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);
-            return await sqlConnection.QueryAsync<Highscore>(
-                "SELECT * FROM [Highscores] ORDER BY UpdatedAt DESC"
-            );
+            return await sqlConnection.QueryAsync<Highscore>("SELECT * FROM [Highscores]");
         }
 
         public async Task UpdateAsync(Highscore highscore)
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);
-
             var existing = await SelectAsync(highscore.UserId);
             if (existing == null)
                 throw new InvalidOperationException("Score bestaat nog niet. Gebruik POST om aan te maken.");
 
             await sqlConnection.ExecuteAsync(
-                "UPDATE [Highscores] SET Score = @Score, UpdatedAt = @UpdatedAt WHERE UserId = @UserId",
+                "UPDATE [Highscores] SET Score = @Score WHERE UserId = @UserId",
                 highscore
             );
         }
