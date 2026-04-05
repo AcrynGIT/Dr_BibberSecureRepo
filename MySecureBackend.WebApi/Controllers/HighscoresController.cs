@@ -25,7 +25,7 @@ public class HighscoresController : ControllerBase
     }
 
     [HttpGet(Name = "GetHighscores")]
-    public async Task<ActionResult<IEnumerable<Highscore>>> GetAll()
+    public async Task<ActionResult<IEnumerable<Highscore>>> GetAsync()
     {
         var highscores = await _repository.SelectAsync();
         return Ok(highscores);

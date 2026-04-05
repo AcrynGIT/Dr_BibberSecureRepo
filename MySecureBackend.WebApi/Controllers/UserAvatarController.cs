@@ -25,7 +25,7 @@ public class UserAvatarsController : ControllerBase
     }
 
     [HttpGet(Name = "GetUseravatars")]
-    public async Task<ActionResult<UserAvatar>> Get()
+    public async Task<ActionResult<UserAvatar>> GetAsync()
     {
         var userId = _authenticationService.GetCurrentAuthenticatedUserId();
         if (string.IsNullOrEmpty(userId))
