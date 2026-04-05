@@ -10,6 +10,6 @@ namespace MySecureBackend.WebApi.Models
         public int KindLeeftijd { get; set; }
         public string ArtsNaam { get; set; } = null!;
         public string BehandelingType { get; set; } = null!;
-        public DateTime Behandeldatum { get; set; }
+        public string Behandeldatum { get; set; }
     }
 }
