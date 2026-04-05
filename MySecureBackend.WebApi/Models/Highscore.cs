@@ -1,9 +1,11 @@
-﻿namespace MySecureBackend.WebApi.Models
+﻿using System;
+
+namespace MySecureBackend.WebApi.Models
 {
     public class Highscore
     {
         public string UserId { get; set; } = null!;
-        public int Score { get; set; }
+        public string Score { get; set; } = null!;  
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
 }

@@ -13,7 +13,6 @@ namespace MySecureBackend.WebApi.Repositories
             this.sqlConnectionString = sqlConnectionString;
         }
 
-        // POST: voeg score toe als die nog niet bestaat
         public async Task InsertAsync(Highscore highscore)
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);
@@ -28,7 +27,6 @@ namespace MySecureBackend.WebApi.Repositories
             );
         }
 
-        // GET: score van user
         public async Task<Highscore?> SelectAsync(string userId)
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);
@@ -38,16 +36,14 @@ namespace MySecureBackend.WebApi.Repositories
             );
         }
 
-        // GET: alle scores
         public async Task<IEnumerable<Highscore>> SelectAsync()
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);
             return await sqlConnection.QueryAsync<Highscore>(
-                "SELECT * FROM [Highscores] ORDER BY Score DESC"
+                "SELECT * FROM [Highscores] ORDER BY UpdatedAt DESC"
             );
         }
 
-        // PUT: update bestaande score
         public async Task UpdateAsync(Highscore highscore)
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);
@@ -62,7 +58,6 @@ namespace MySecureBackend.WebApi.Repositories
             );
         }
 
-        // DELETE: score verwijderen
         public async Task DeleteAsync(string userId)
         {
             using var sqlConnection = new SqlConnection(sqlConnectionString);

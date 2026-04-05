@@ -22,7 +22,6 @@ public class HighscoresController : ControllerBase
         _authenticationService = authenticationService;
     }
 
-    // GET /highscores -> leaderboard
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Highscore>>> GetAll()
     {
@@ -30,7 +29,6 @@ public class HighscoresController : ControllerBase
         return Ok(highscores);
     }
 
-    // POST /highscores -> nieuwe score toevoegen
     [HttpPost]
     public async Task<ActionResult<Highscore>> Add(Highscore highscore)
     {
@@ -46,7 +44,6 @@ public class HighscoresController : ControllerBase
         return Created("/highscores", highscore);
     }
 
-    // PUT /highscores -> bestaande score updaten
     [HttpPut]
     public async Task<ActionResult<Highscore>> Update(Highscore highscore)
     {
@@ -55,21 +52,17 @@ public class HighscoresController : ControllerBase
             return Forbid();
 
         var existing = await _repository.SelectAsync(userId);
+        if (existing == null)
+            return NotFound(new ProblemDetails { Detail = "Score bestaat nog niet. Gebruik POST om aan te maken" });
 
         highscore.UserId = userId;
         highscore.UpdatedAt = DateTime.UtcNow;
-
-        if (existing == null)
-        {
-            return NotFound(new ProblemDetails { Detail = "Score bestaat nog niet, gebruik POST om aan te maken" });
-        }
 
         await _repository.UpdateAsync(highscore);
 
         return Ok(highscore);
     }
 
-    // DELETE /highscores -> delete score
     [HttpDelete]
     public async Task<ActionResult> Delete()
     {

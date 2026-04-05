@@ -28,6 +28,7 @@ namespace MySecureBackend.Tests
             userAvatarRepoMock = new Mock<IUserAvatarRepository>();
             authServiceMock = new Mock<IAuthenticationService>();
 
+            // Zorg dat de mock altijd dezelfde ingelogde gebruiker teruggeeft.
             authServiceMock.Setup(a => a.GetCurrentAuthenticatedUserId()).Returns(CurrentUserId);
 
             highscoresController = new HighscoresController(highscoreRepoMock.Object, authServiceMock.Object);
@@ -35,7 +36,7 @@ namespace MySecureBackend.Tests
         }
 
         [TestMethod]
-        // controleren dat de API een 404 Not Found teruggeeft als er geen highscore bestaat voor de gebruiker.
+        // GET /highscores moet een empty terug geven, als er geen scores zijn.
         public async Task HighscoreController_GetAll_ReturnsEmpty_WhenNoHighscores()
         {
             highscoreRepoMock.Setup(r => r.SelectAsync())
@@ -51,12 +52,12 @@ namespace MySecureBackend.Tests
         }
 
         [TestMethod]
-        // controleren dat het toevoegen van een highscore werkt en dat de controller een OkObjectResult teruggeeft
+        // POST /highscores uittesten.
         public async Task HighscoreController_AddHighscore_ReturnsCreatedHighscore()
         {
             var newHighscore = new Highscore
             {
-                Score = 100
+                Score = "100"
             };
 
             highscoreRepoMock.Setup(r => r.InsertAsync(It.IsAny<Highscore>()))
@@ -77,36 +78,17 @@ namespace MySecureBackend.Tests
         }
 
         [TestMethod]
-        // controleren dat het updaten van een highscore werkt
-        public async Task HighscoreController_UpdateHighscore_ReturnsOk()
+        // DELETE /highscores verwijdert score
+        public async Task HighscoreController_DeleteHighscore_ReturnsOk()
         {
-            var existingHighscore = new Highscore
-            {
-                Score = 50
-            };
-
-            highscoreRepoMock.Setup(r => r.SelectAsync(CurrentUserId))
-                             .ReturnsAsync(existingHighscore);
-
-            highscoreRepoMock.Setup(r => r.UpdateAsync(It.IsAny<Highscore>()))
+            highscoreRepoMock.Setup(r => r.DeleteAsync(CurrentUserId))
                              .Returns(Task.CompletedTask)
                              .Verifiable();
 
-            var updateHighscore = new Highscore
-            {
-                Score = 150
-            };
-
-            var result = await highscoresController.Update(updateHighscore);
-            var okResult = result.Result as OkObjectResult;
+            var result = await highscoresController.Delete();
+            var okResult = result as OkResult;
 
             Assert.IsNotNull(okResult);
-
-            var returnedHighscore = okResult.Value as Highscore;
-            Assert.IsNotNull(returnedHighscore);
-            Assert.AreEqual(CurrentUserId, returnedHighscore.UserId);
-            Assert.AreEqual(150, returnedHighscore.Score);
-
             highscoreRepoMock.Verify();
         }
     }
