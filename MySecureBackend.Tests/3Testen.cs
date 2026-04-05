@@ -36,7 +36,7 @@ namespace MySecureBackend.Tests
             highscoreRepoMock.Setup(r => r.SelectAsync())
                              .ReturnsAsync(new List<Highscore>());
 
-            var result = await highscoresController.GetAll();
+            var result = await highscoresController.GetAsync();
             var okResult = result.Result as OkObjectResult;
 
             Assert.IsNotNull(okResult);
