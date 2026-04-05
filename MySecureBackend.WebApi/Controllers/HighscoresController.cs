@@ -22,14 +22,14 @@ public class HighscoresController : ControllerBase
         _authenticationService = authenticationService;
     }
 
-    [HttpGet]
+    [HttpGet(Name = "GetHighscore")]
     public async Task<ActionResult<IEnumerable<Highscore>>> GetAll()
     {
         var highscores = await _repository.SelectAsync();
         return Ok(highscores);
     }
 
-    [HttpPost]
+    [HttpPost(Name = "PostHighscore")]
     public async Task<ActionResult<Highscore>> Add(Highscore highscore)
     {
         var userId = _authenticationService.GetCurrentAuthenticatedUserId();
@@ -44,7 +44,7 @@ public class HighscoresController : ControllerBase
         return Created("/highscores", highscore);
     }
 
-    [HttpPut]
+    [HttpPut(Name = "UpdateHighscore")]
     public async Task<ActionResult<Highscore>> Update(Highscore highscore)
     {
         var userId = _authenticationService.GetCurrentAuthenticatedUserId();
@@ -63,7 +63,7 @@ public class HighscoresController : ControllerBase
         return Ok(highscore);
     }
 
-    [HttpDelete]
+    [HttpDelete(Name = "DeleteHighscore")]
     public async Task<ActionResult> Delete()
     {
         var userId = _authenticationService.GetCurrentAuthenticatedUserId();
